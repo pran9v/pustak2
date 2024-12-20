@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}- Discover Books{% endblock %}
+{% block content %}
+    <h2 class="mb-4">Discover Books</h2>
+    <div class="row">
+        {% for book in books %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <img src="{{ url_for('static', filename='uploads/' + book.image_path) }}" 
+                     class="card-img-top" alt="{{ book.title }}" style="height: 300px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title">{{ book.title }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">By {{ book.author }}</h6>
+                    <p class="card-text">{{ book.description[:150] }}{% if book.description|length > 150 %}...{% endif %}</p>
+                    <p class="card-text"><small class="text-muted">Shared by {{ book.owner.username }}</small></p>
+                    <a href="{{ url_for('book_details', book_id=book.id) }}" class="btn btn-info">View Details</a>
+                    {% if book.owner_id != current_user.id %}
+                        <a href="{{ url_for('show_interest', book_id=book.id) }}" class="btn btn-success">Show Interest</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+<!-- Add this to templates/base.html in the navbar -->
+<!-- Add this line inside the <ul class="navbar-nav mr-auto"> element -->
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('discover') }}">Discover Books</a>
+</li>
