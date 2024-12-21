@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}- My Requests{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Book Exchange Requests</h2>
+    
+    <!-- Debug Info -->
+    {% if not received_requests and not sent_requests %}
+    <div class="alert alert-info">
+        No requests found. This could mean either:
+        - You haven't sent or received any requests yet
+        - There might be an issue with the database connection
+    </div>
+    {% endif %}
+    
+    <!-- Received Requests -->
+    <h3>Requests Received ({{ received_requests|length }})</h3>
+    <div class="table-responsive">
+        {% if received_requests %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Requested Book</th>
+                    <th>Requester</th>
+                    <th>Offered Book</th>
+                    <th>Message</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in received_requests %}
+                <tr>
+                    <td>{{ request.requested_book.title if request.requested_book else 'N/A' }}</td>
+                    <td>{{ request.requester_user.username if request.requester_user else 'N/A' }}</td>
+                    <td>
+                        {% if request.offered_book %}
+                            {{ request.offered_book.title }}
+                        {% else %}
+                            No book offered
+                        {% endif %}
+                    </td>
+                    <td>{{ request.message }}</td>
+                    <td>{{ request.status }}</td>
+                    <td>
+                        {% if request.status == 'pending' %}
+                            <a href="{{ url_for('handle_request', request_id=request.id, action='accept') }}" 
+                               class="btn btn-success btn-sm">Accept</a>
+                            <a href="{{ url_for('handle_request', request_id=request.id, action='reject') }}" 
+                               class="btn btn-danger btn-sm">Reject</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No requests received.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Sent Requests -->
+    <h3 class="mt-4">Requests Sent ({{ sent_requests|length }})</h3>
+    <div class="table-responsive">
+        {% if sent_requests %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Requested Book</th>
+                    <th>Owner</th>
+                    <th>Offered Book</th>
+                    <th>Status</th>
+                    <th>Date Sent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in sent_requests %}
+                <tr>
+                    <td>{{ request.requested_book.title if request.requested_book else 'N/A' }}</td>
+                    <td>{{ request.owner_user.username if request.owner_user else 'N/A' }}</td>
+                    <td>
+                        {% if request.offered_book %}
+                            {{ request.offered_book.title }}
+                        {% else %}
+                            No book offered
+                        {% endif %}
+                    </td>
+                    <td>{{ request.status }}</td>
+                    <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No requests sent.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

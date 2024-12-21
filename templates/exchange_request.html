@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}- Request Exchange{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Request Book Exchange</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Book You Want</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ requested_book.title }}</h6>
+                    <p class="card-text">By {{ requested_book.author }}</p>
+                    <p class="card-text"><small class="text-muted">Owned by {{ requested_book.owner.username }}</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="exchange_type">Exchange Type</label>
+            <select class="form-control" id="exchange_type" name="exchange_type" onchange="toggleBookSelection(this.value)">
+                <option value="request">Just Request (No Exchange)</option>
+                <option value="exchange">Offer Book for Exchange</option>
+            </select>
+        </div>
+
+        <div id="book_selection" style="display: none;">
+            <div class="form-group">
+                <label for="offered_book">Select Book to Offer</label>
+                <select class="form-control" id="offered_book" name="offered_book_id">
+                    <option value="">Select a book</option>
+                    {% for book in user_books %}
+                    <option value="{{ book.id }}">{{ book.title }} by {{ book.author }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="message">Message to Owner</label>
+            <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Request</button>
+    </form>
+</div>
+
+<script>
+function toggleBookSelection(value) {
+    const bookSelection = document.getElementById('book_selection');
+    bookSelection.style.display = value === 'exchange' ? 'block' : 'none';
+}
+</script>
+{% endblock %}
+
+<!-- Add this to templates/dashboard.html in the actions column -->
+<td>
+    <a href="{{ url_for('book_details', book_id=book.id) }}" class="btn btn-info btn-sm">Details</a>
+    {% if book.owner_id != current_user.id %}
+        <a href="{{ url_for('request_exchange', book_id=book.id) }}" class="btn btn-success btn-sm">Request Book</a>
+    {% endif %}
+</td>

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}- Show Interest{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4">Show Interest in Book Exchange</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Book You're Interested In:</h5>
+                    <p class="card-text">
+                        <strong>Title:</strong> {{ book.title }}<br>
+                        <strong>Author:</strong> {{ book.author }}<br>
+                        <strong>Owner:</strong> {{ book.owner.username }}
+                    </p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label for="exchange_book_id">Select Your Book to Exchange:</label>
+                    <select class="form-control" id="exchange_book_id" name="exchange_book_id" required>
+                        <option value="">Choose a book...</option>
+                        {% for user_book in user_books %}
+                        <option value="{{ user_book.id }}">{{ user_book.title }} by {{ user_book.author }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Interest</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

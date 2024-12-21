@@ -1,0 +1,69 @@
+
+{% extends "base.html" %}
+{% block title %}- Pending Payments{% endblock %}
+{% block content %}
+    <h2 class="mb-4">Pending Exchange Payments</h2>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Exchange Details</th>
+                    <th scope="col">Other User</th>
+                    <th scope="col">Books</th>
+                    <th scope="col">Payment Status</th>
+                    <th scope="col">Created Date</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exchange in pending_exchanges %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>
+                        Exchange ID: #{{ exchange.id }}<br>
+                        Amount: ₹{{ exchange.payment_amount }}
+                    </td>
+                    <td>
+                        {% if current_user.id == exchange.user1_id %}
+                            {{ exchange.user2.username }}
+                        {% else %}
+                            {{ exchange.user1.username }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        Giving: {{ exchange.book1.title if current_user.id == exchange.user1_id else exchange.book2.title }}<br>
+                        Receiving: {{ exchange.book2.title if current_user.id == exchange.user1_id else exchange.book1.title }}
+                    </td>
+                    <td>
+                        {% if current_user.id == exchange.user1_id %}
+                            Your Payment: {{ "Paid" if exchange.user1_payment else "Pending" }}<br>
+                            Other User: {{ "Paid" if exchange.user2_payment else "Pending" }}
+                        {% else %}
+                            Your Payment: {{ "Paid" if exchange.user2_payment else "Pending" }}<br>
+                            Other User: {{ "Paid" if exchange.user1_payment else "Pending" }}
+                        {% endif %}
+                    </td>
+                    <td>{{ exchange.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                        {% if (current_user.id == exchange.user1_id and not exchange.user1_payment) or
+                              (current_user.id == exchange.user2_id and not exchange.user2_payment) %}
+                            <a href="{{ url_for('process_payment', exchange_id=exchange.id) }}" 
+                               class="btn btn-primary btn-sm">
+                                Pay Now
+                            </a>
+                        {% else %}
+                            <button class="btn btn-secondary btn-sm" disabled>Paid</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not pending_exchanges %}
+            <div class="alert alert-info">
+                You have no pending payments for book exchanges.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

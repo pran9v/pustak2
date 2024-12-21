@@ -2,33 +2,90 @@
 {% block title %}- Dashboard{% endblock %}
 {% block content %}
     <h2 class="mb-4">Available Books</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Book</th>
-                <th scope="col">Author</th>
-                <th scope="col">Owner</th>
-                <th scope="col">Added Date</th>
-                <th scope="col">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for book in books %}
-            <tr>
-                <th scope="row">{{ loop.index }}</th>
-                <td>{{ book.title }}</td>
-                <td>{{ book.author }}</td>
-                <td>{{ book.owner.username }}</td>
-                <td>{{ book.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                <td>
-                    <a href="{{ url_for('book_details', book_id=book.id) }}" class="btn btn-info btn-sm">Details</a>
-                    {% if book.owner_id != current_user.id %}
-                        <a href="{{ url_for('show_interest', book_id=book.id) }}" class="btn btn-success btn-sm">Show Interest</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Book</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col">Added Date</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.owner.username }}</td>
+                    <td>{{ book.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>₹{{ book.price|round|int if book.price else "N/A" }}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('book_details', book_id=book.id) }}" 
+                               class="btn btn-info btn-sm" 
+                               title="View book details">
+                                <i class="fas fa-info-circle"></i> Details
+                            </a>
+                            {% if book.owner_id != current_user.id %}
+                                <a href="{{ url_for('show_interest', book_id=book.id) }}" 
+                                   class="btn btn-success btn-sm"
+                                   title="Show interest in exchanging">
+                                    <i class="fas fa-exchange-alt"></i> Interest
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-primary btn-sm" 
+                                        data-toggle="modal" 
+                                        data-target="#buyModal{{ book.id }}"
+                                        title="Purchase this book">
+                                    <i class="fas fa-shopping-cart"></i> Buy
+                                </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- Buy Modal -->
+                        <div class="modal fade" id="buyModal{{ book.id }}" tabindex="-1" role="dialog" aria-labelledby="buyModalLabel{{ book.id }}" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="buyModalLabel{{ book.id }}">Purchase Book: {{ book.title }}</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form action="{{ url_for('buy_book', book_id=book.id) }}" method="POST">
+                                            <div class="form-group">
+                                                <label>Book Price: ₹{{ book.price|round|int if book.price else "N/A" }}</label>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="shipping-address">Shipping Address:</label>
+                                                <textarea class="form-control" id="shipping-address" name="shipping_address" required></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="payment-method">Payment Method:</label>
+                                                <select class="form-control" id="payment-method" name="payment_method" required>
+                                                    <option value="upi">UPI</option>
+                                                    <option value="net_banking">Net Banking</option>
+                                                    <option value="credit_card">Credit Card</option>
+                                                    <option value="debit_card">Debit Card</option>
+                                                    <option value="cod">Cash on Delivery</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Confirm Purchase</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

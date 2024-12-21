@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}- Exchange Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Book Exchange Details</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <!-- First Book Details -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h4 class="mb-0">Book 1</h4>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ exchange.book1.title }}</h5>
+                            <p class="card-text"><strong>Author:</strong> {{ exchange.book1.author }}</p>
+                            <p class="card-text"><strong>Owner:</strong> {{ exchange.user1.username }}</p>
+                            {% if exchange.book1.image_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + exchange.book1.image_path) }}" 
+                                 class="img-fluid rounded" alt="{{ exchange.book1.title }}">
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Book Details -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h4 class="mb-0">Book 2</h4>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ exchange.book2.title }}</h5>
+                            <p class="card-text"><strong>Author:</strong> {{ exchange.book2.author }}</p>
+                            <p class="card-text"><strong>Owner:</strong> {{ exchange.user2.username }}</p>
+                            {% if exchange.book2.image_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + exchange.book2.image_path) }}" 
+                                 class="img-fluid rounded" alt="{{ exchange.book2.title }}">
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Status Section -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Payment Status</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Required Payment: Rs. {{ exchange.payment_amount }}</h5>
+                        <p class="mb-0">Both users must pay Rs. {{ exchange.payment_amount }} to proceed with the exchange.</p>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>{{ exchange.user1.username }}'s Payment</h5>
+                                    {% if exchange.user1_payment %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>{{ exchange.user2.username }}'s Payment</h5>
+                                    {% if exchange.user2_payment %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Button -->
+                    {% if current_user.id == exchange.user1_id and not exchange.user1_payment or 
+                       current_user.id == exchange.user2_id and not exchange.user2_payment %}
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('process_payment', exchange_id=exchange.id) }}" 
+                           class="btn btn-primary btn-lg">
+                            Pay Rs. {{ exchange.payment_amount }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Exchange Status -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Exchange Status</h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        Status: 
+                        {% if exchange.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif exchange.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
