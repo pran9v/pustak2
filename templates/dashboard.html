@@ -11,7 +11,7 @@
             <input type="text" class="form-control" placeholder="Search by title or author" name="search" value="{{ search_query }}">
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary" type="submit">
-                    <i class="fas fa-search"></i>
+                    Search  
                 </button>
             </div>
         </div>
@@ -42,30 +42,31 @@
                     <td>₹{{ book_data.book.price|round|int if book_data.book.price else "N/A" }}</td>
                     <td>
                         <div class="btn-group" role="group">
-                            <a href="{{ url_for('book_details', book_id=book_data.book.id) }}" class="btn btn-info btn-sm" title="View book details">
+                            <a href="{{ url_for('book_details', book_id=book_data.book.id) }}" class="btn btn-info btn-sm mr-2 btn-rounded" title="View book details">
                                 <i class="fas fa-info-circle"></i> Details
                             </a>
-
+                        
                             <!-- Show Interest Button -->
                             {% if book_data.book.owner_id != current_user.id %}
                                 {% if book_data.interest_exists %}
-                                    <button class="btn btn-secondary btn-sm" disabled title="You have already shown interest">
+                                    <button class="btn btn-secondary btn-sm mr-2 btn-rounded" disabled title="You have already shown interest">
                                         <i class="fas fa-exchange-alt"></i> Interest
                                     </button>
                                 {% else %}
-                                    <a href="{{ url_for('show_interest', book_id=book_data.book.id) }}" class="btn btn-success btn-sm" title="Show interest in exchanging">
+                                    <a href="{{ url_for('show_interest', book_id=book_data.book.id) }}" class="btn btn-success btn-sm mr-2 btn-rounded" title="Show interest in exchanging">
                                         <i class="fas fa-exchange-alt"></i> Interest
                                     </a>
                                 {% endif %}
                             {% endif %}
-
+                        
                             <!-- Buy Button -->
                             {% if book_data.book.owner_id != current_user.id %}
-                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#buyModal{{ book_data.book.id }}" title="Purchase this book">
+                                <button type="button" class="btn btn-primary btn-sm btn-rounded" data-toggle="modal" data-target="#buyModal{{ book_data.book.id }}" title="Purchase this book">
                                     <i class="fas fa-shopping-cart"></i> Buy
                                 </button>
                             {% endif %}
                         </div>
+                        
 
                         <!-- Buy Modal -->
                         <div class="modal fade" id="buyModal{{ book_data.book.id }}" tabindex="-1" role="dialog" aria-labelledby="buyModalLabel{{ book_data.book.id }}" aria-hidden="true">
