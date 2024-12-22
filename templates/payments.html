@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Process Payment</h2>
+<p>Please enter the payment link to proceed with the transaction.</p>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="payment_link">Payment Link</label>
+        <input type="url" class="form-control" id="payment_link" name="payment_link" placeholder="Enter payment link" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Process Payment</button>
+</form>
+
+<p>Processing payments...</p>
+{% endblock %}

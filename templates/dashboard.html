@@ -1,7 +1,23 @@
 {% extends "base.html" %}
+
 {% block title %}- Dashboard{% endblock %}
+
 {% block content %}
     <h2 class="mb-4">Available Books</h2>
+    
+    <!-- Search Bar -->
+    <form method="GET" action="{{ url_for('dashboard') }}" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search by title or author" name="search" value="{{ search_query }}">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Book Table -->
     <div class="table-responsive">
         <table class="table">
             <thead>
@@ -16,51 +32,55 @@
                 </tr>
             </thead>
             <tbody>
-                {% for book in books %}
+                {% for book_data in books %}
                 <tr>
                     <th scope="row">{{ loop.index }}</th>
-                    <td>{{ book.title }}</td>
-                    <td>{{ book.author }}</td>
-                    <td>{{ book.owner.username }}</td>
-                    <td>{{ book.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>₹{{ book.price|round|int if book.price else "N/A" }}</td>
+                    <td>{{ book_data.book.title }}</td>
+                    <td>{{ book_data.book.author }}</td>
+                    <td>{{ book_data.book.owner.username }}</td>
+                    <td>{{ book_data.book.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>₹{{ book_data.book.price|round|int if book_data.book.price else "N/A" }}</td>
                     <td>
                         <div class="btn-group" role="group">
-                            <a href="{{ url_for('book_details', book_id=book.id) }}" 
-                               class="btn btn-info btn-sm" 
-                               title="View book details">
+                            <a href="{{ url_for('book_details', book_id=book_data.book.id) }}" class="btn btn-info btn-sm" title="View book details">
                                 <i class="fas fa-info-circle"></i> Details
                             </a>
-                            {% if book.owner_id != current_user.id %}
-                                <a href="{{ url_for('show_interest', book_id=book.id) }}" 
-                                   class="btn btn-success btn-sm"
-                                   title="Show interest in exchanging">
-                                    <i class="fas fa-exchange-alt"></i> Interest
-                                </a>
-                                <button type="button" 
-                                        class="btn btn-primary btn-sm" 
-                                        data-toggle="modal" 
-                                        data-target="#buyModal{{ book.id }}"
-                                        title="Purchase this book">
+
+                            <!-- Show Interest Button -->
+                            {% if book_data.book.owner_id != current_user.id %}
+                                {% if book_data.interest_exists %}
+                                    <button class="btn btn-secondary btn-sm" disabled title="You have already shown interest">
+                                        <i class="fas fa-exchange-alt"></i> Interest
+                                    </button>
+                                {% else %}
+                                    <a href="{{ url_for('show_interest', book_id=book_data.book.id) }}" class="btn btn-success btn-sm" title="Show interest in exchanging">
+                                        <i class="fas fa-exchange-alt"></i> Interest
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- Buy Button -->
+                            {% if book_data.book.owner_id != current_user.id %}
+                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#buyModal{{ book_data.book.id }}" title="Purchase this book">
                                     <i class="fas fa-shopping-cart"></i> Buy
                                 </button>
                             {% endif %}
                         </div>
 
                         <!-- Buy Modal -->
-                        <div class="modal fade" id="buyModal{{ book.id }}" tabindex="-1" role="dialog" aria-labelledby="buyModalLabel{{ book.id }}" aria-hidden="true">
+                        <div class="modal fade" id="buyModal{{ book_data.book.id }}" tabindex="-1" role="dialog" aria-labelledby="buyModalLabel{{ book_data.book.id }}" aria-hidden="true">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="buyModalLabel{{ book.id }}">Purchase Book: {{ book.title }}</h5>
+                                        <h5 class="modal-title" id="buyModalLabel{{ book_data.book.id }}">Purchase Book: {{ book_data.book.title }}</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <form action="{{ url_for('buy_book', book_id=book.id) }}" method="POST">
+                                        <form action="{{ url_for('buy_book', book_id=book_data.book.id) }}" method="POST">
                                             <div class="form-group">
-                                                <label>Book Price: ₹{{ book.price|round|int if book.price else "N/A" }}</label>
+                                                <label>Book Price: ₹{{ book_data.book.price|round|int if book_data.book.price else "N/A" }}</label>
                                             </div>
                                             <div class="form-group">
                                                 <label for="shipping-address">Shipping Address:</label>

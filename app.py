@@ -81,11 +81,11 @@ def register():
 def show_interest(book_id):
     book = Book.query.get_or_404(book_id)
     user_books = Book.query.filter_by(owner_id=current_user.id, is_available=True).all()
-    
+
     if request.method == 'POST':
         exchange_book_id = request.form.get('exchange_book_id')
         exchange_message = request.form.get('exchange_message')
-        
+
         if book.owner_id != current_user.id:
             interest = Interest(
                 user_id=current_user.id,
@@ -96,9 +96,24 @@ def show_interest(book_id):
             db.session.add(interest)
             db.session.commit()
             flash('Interest shown successfully')
+
+            # Ensure that an exchange is initiated (this may be missing in your current code)
+            if exchange_book_id:
+                exchange = Exchange(
+                    book1_id=book_id,
+                    book2_id=exchange_book_id,
+                    user1_id=current_user.id,
+                    user2_id=book.owner_id,
+                    payment_amount=25.0,  # Or the appropriate amount
+                    status='pending'
+                )
+                db.session.add(exchange)
+                db.session.commit()
+
             return redirect(url_for('dashboard'))
-            
+
     return render_template('show_interest.html', book=book, user_books=user_books)
+
 
 
 
@@ -117,10 +132,30 @@ def login():
     return render_template('login.html')
 
 @app.route('/dashboard')
-@login_required
 def dashboard():
-    books = Book.query.filter_by(is_available=True).all()
-    return render_template('dashboard.html', books=books)
+    search_query = request.args.get('search', '')
+    
+    # Filter books by title or author based on search query
+    books = Book.query.filter(
+        (Book.title.ilike(f'%{search_query}%')) | 
+        (Book.author.ilike(f'%{search_query}%'))
+    ).all()
+    
+    # Get a list of books with interest status for the current user
+    books_with_interest = []
+    for book in books:
+        interest_exists = Interest.query.filter_by(book_id=book.id, user_id=current_user.id).first() is not None
+        books_with_interest.append({
+            'book': book,
+            'interest_exists': interest_exists
+        })
+    
+    return render_template('dashboard.html', books=books_with_interest, search_query=search_query)
+
+
+
+
+
 
 @app.route('/add_book', methods=['GET', 'POST'])
 @login_required
@@ -336,31 +371,90 @@ def buy_book(book_id):
     flash(f'Successfully purchased {book.title}! Shipping to provided address.', 'success')
     return redirect(url_for('dashboard'))
 
-@app.route('/my-requests')
+@app.route('/my_books')
 @login_required
-def my_requests():
-    # Add explicit queries with joins to ensure all relationships are loaded
-    sent_requests = BookExchangeRequest.query.filter_by(requester_id=current_user.id)\
-        .options(
-            db.joinedload(BookExchangeRequest.requested_book),
-            db.joinedload(BookExchangeRequest.offered_book),
-            db.joinedload(BookExchangeRequest.owner_user)
-        ).all()
+def my_books():
+    # Fetch books owned by the current user
+    posted_books = Book.query.filter_by(owner_id=current_user.id).all()
+    return render_template('my_books.html', posted_books=posted_books)
+
+@app.route('/edit_book/<int:book_id>', methods=['GET', 'POST'])
+@login_required
+def edit_book(book_id):
+    book = Book.query.get_or_404(book_id)
+
+    # Ensure only the owner of the book can edit it
+    if book.owner_id != current_user.id:
+        flash('Unauthorized action!', 'error')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        book.title = request.form['title']
+        book.author = request.form['author']
+        book.description = request.form['description']
+        book.price = request.form.get('price', type=float)
+
+        image = request.files.get('image')
+        if image and allowed_file(image.filename):
+            # Save the new image
+            filename = secure_filename(image.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            image.save(image_path)
+            
+            # Delete the old image if it exists
+            if book.image_path:
+                old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], book.image_path)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+            
+            # Update the image path
+            book.image_path = filename
+
+        db.session.commit()
+        flash('Book updated successfully!', 'success')
+        return redirect(url_for('dashboard'))
+
+    return render_template('edit_book.html', book=book)
+
+
+@app.route('/delete_book/<int:book_id>', methods=['POST'])
+@login_required
+def delete_book(book_id):
+    book = Book.query.get_or_404(book_id)
+
+    # Check if the current user owns the book
+    if book.owner_id != current_user.id:
+        flash('You are not authorized to delete this book.', 'error')
+        return redirect(url_for('dashboard'))
+
+    # Delete associated interests
+    interests = Interest.query.filter_by(book_id=book.id).all()
+    for interest in interests:
+        db.session.delete(interest)
     
-    received_requests = BookExchangeRequest.query.filter_by(owner_id=current_user.id)\
-        .options(
-            db.joinedload(BookExchangeRequest.requested_book),
-            db.joinedload(BookExchangeRequest.offered_book),
-            db.joinedload(BookExchangeRequest.requester_user)
-        ).all()
-    
-    # Add debug logging
-    print(f"Sent Requests: {len(sent_requests)}")
-    print(f"Received Requests: {len(received_requests)}")
-    
-    return render_template('my_requests.html', 
-                         sent_requests=sent_requests, 
-                         received_requests=received_requests)
+    # Remove the book from any exchanges
+    exchanges_involving_book = Exchange.query.filter(
+        db.or_(
+            Exchange.book1_id == book.id,
+            Exchange.book2_id == book.id
+        )
+    ).all()
+
+    for exchange in exchanges_involving_book:
+        # Option 1: Delete the exchange if the book is involved
+        db.session.delete(exchange)
+
+        # Option 2 (optional): Or you could just update the status instead of deleting
+        # exchange.status = 'cancelled'  # or any other status indicating the transaction was invalid
+        # db.session.add(exchange)
+
+    # Delete the book
+    db.session.delete(book)
+    db.session.commit()
+
+    flash('Book deleted successfully!', 'success')
+    return redirect(url_for('dashboard'))
+
 
 @app.route('/handle-request/<int:request_id>/<string:action>')
 @login_required
@@ -398,10 +492,11 @@ def pending_payments():
                 Exchange.user2_payment == False
             )
         ),
-        Exchange.status != 'completed'
+        Exchange.status == 'pending'  # Ensure the status is 'pending'
     ).order_by(Exchange.created_at.desc()).all()
 
     return render_template('pending_payments.html', pending_exchanges=pending_exchanges)
+
 
 if __name__ == '__main__':
     with app.app_context():
